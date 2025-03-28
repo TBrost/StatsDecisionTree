@@ -3,6 +3,7 @@ library(shiny)
 library(DiagrammeR) # This package contains both grViz and mermaid
 library(shinyjs)    # For conditional panels
 
+
 # --- Data Structure (Mermaid Diagram and Questions) ---
 # (No changes needed in this structure itself, as it already contains Mermaid code)
 decision_data <- list(
@@ -93,6 +94,52 @@ decision_data <- list(
         formula = "<b>Use Case:</b> Modeling the relationship between a dependent variable (usually continuous) and one or more independent variables.<br><br><b>Simple Linear Regression Model:</b><br>Y = β₀ + β₁X + ε<br><br><b>Hypotheses (for slope β₁):</b><br>H₀: β₁ = 0 (No linear relationship)<br>Hₐ: β₁ ≠ 0 (Linear relationship exists)<br><br><b>R Function (Base R):</b><br><code>model <- lm(dependent_variable ~ independent_variable, data = your_data)</code><br><code>summary(model) # Provides coefficients, t-stats, p-values</code><br><br><b>Confidence Interval (for slope β₁):</b><br>Calculated within `summary(model)` output or using `confint(model)`."
     )
 )
+
+# --- UI ---
+ui <- fluidPage(
+    useShinyjs(),
+    titlePanel("Statistical Test Decision Tool - ALPHA"),
+    sidebarLayout(
+        sidebarPanel(
+            width = 4, # Give sidebar a bit more space if needed
+            # Show Back button ONLY if not on the first step AND not on final result
+            conditionalPanel(
+                condition = "output.canGoBack",
+                actionButton("backButton", "Back", icon = icon("arrow-left"), class = "btn-warning")
+            ),
+            # Show questions ONLY if not on the final result page
+            conditionalPanel(
+                condition = "!output.isFinal",
+                uiOutput("questionUI")
+            ),
+            # Show Reset button ONLY on the final result page
+            conditionalPanel(
+                condition = "output.isFinal",
+                actionButton("resetButton", "Start Over", icon = icon("refresh"), class = "btn-primary btn-lg"),
+                hr()
+            ),
+            # --- Debugging Section (Optional) ---
+            hr(),
+            tags$h5("Debugging Info:"), # Use h5 for smaller debug title
+            verbatimTextOutput("debugOutput")
+            # --- End Debugging ---
+        ),
+        mainPanel(
+            width = 8,
+            tags$h4("Decision Path Diagram:"),
+            DiagrammeROutput("diagram", height = "450px"),
+            hr(),
+            conditionalPanel(
+                condition = "output.isFinal",
+                tags$h4("Test Information:"),
+                wellPanel(
+                    htmlOutput("formulaInfo")
+                )
+            )
+        )
+    )
+)
+
 
 # --- Server ---
 server <- function(input, output, session) {
@@ -336,3 +383,6 @@ server <- function(input, output, session) {
     })
     
 }
+
+# --- Run the application ---
+shinyApp(ui = ui, server = server)
